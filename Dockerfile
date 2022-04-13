@@ -1,7 +1,10 @@
 # Build the executable
 FROM rust:bullseye as builder
-EXPOSE 5055/tcp
-EXPOSE 5055/udp
+EXPOSE 5055
+#EXPOSE 5055/tcp
+#EXPOSE 5055/udp
+#PORTS 5055/tcp
+#PORTS 5055/udp
 
 WORKDIR /app
 
