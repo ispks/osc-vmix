@@ -1,29 +1,24 @@
-FROM rust:latest as build
+# Build the executable
+FROM rust:bullseye as builder
+EXPOSE 5055/tcp
+EXPOSE 5055/udp
 
-# create a new empty shell project
-RUN USER=root cargo new --bin osc-vmix
-WORKDIR /osc-vmix
+WORKDIR /app
 
-# copy over your manifests
-COPY ./Cargo.lock ./Cargo.lock
-COPY ./Cargo.toml ./Cargo.toml
+COPY Cargo.toml ./
 
-# this build step will cache your dependencies
+RUN mkdir src/
+RUN echo "fn main() {println!(\"if you see this, the build broke\")}" > src/main.rs
+
 RUN cargo build --release
-RUN rm src/*.rs
 
-# copy your source tree
 COPY ./src ./src
 
-# build for release
-#RUN rm ./target/release/deps/osc-vmix*
+RUN touch src/main.rs
 RUN cargo build --release
 
-# our final base
-FROM rust:latest
-
-# copy the build artifact from the build stage
-COPY --from=build /osc-vmix/target/release/osc-vmix .
-
-# set the startup command to run your binary
-CMD "cargo run 0.0.0.0:5055 192.168.10.123:8088"
+# == == ==
+# Copy the executable and extra files ("static") to an empty Docker image
+FROM debian:bullseye
+COPY --from=builder /app/target/release/ ./app
+CMD [ "./app/osc-vmix","0.0.0.0:5055","192.168.10.123:8088" ]
